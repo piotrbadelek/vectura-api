@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"io/fs"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -270,6 +271,53 @@ func GetCalendarDates(data []byte) []models.CalendarDate {
 	}
 
 	return calendarDates
+}
+
+func GetShapes(data []byte) []models.Shape {
+	zipReader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	gostfu(err)
+
+	file, err := zipReader.Open("shapes.txt")
+	if err != nil {
+		if err.Error() == "open shapes.txt: file does not exist" {
+			return []models.Shape{}
+		} else {
+			panic(err)
+		}
+	}
+
+	parsedfile := parseCSV(file)
+
+	var shapes []models.Shape
+
+	for _, row := range parsedfile {
+		shape := models.Shape{
+			ShapeId:         row["shape_id"],
+			ShapePtLat:      parseFloat(row["shape_pt_lat"]),
+			ShapePtLon:      parseFloat(row["shape_pt_lon"]),
+			ShapePtSequence: parseInt(row["shape_pt_sequence"]),
+		}
+
+		shapes = append(shapes, shape)
+	}
+
+	return shapes
+}
+
+func GetShapeById(id string, shapes []models.Shape) []models.Shape {
+	shps := make([]models.Shape, 0)
+
+	for _, shape := range shapes {
+		if shape.ShapeId == id {
+			shps = append(shps, shape)
+		}
+	}
+
+	sort.Slice(shps, func(i, j int) bool {
+		return shps[i].ShapePtSequence < shps[j].ShapePtSequence
+	})
+
+	return shps
 }
 
 func GetDeparturesForStop(allDepartures []models.Departure, stop string) []models.Departure {

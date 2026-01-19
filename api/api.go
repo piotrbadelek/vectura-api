@@ -19,6 +19,7 @@ type CityConfig struct {
 
 var SupportedCities = []CityConfig{
 	{ID: "kielce", URL: "https://cdn.zbiorkom.live/gtfs/kielce.zip"},
+	{ID: "pkp-ic", URL: "https://cdn.zbiorkom.live/gtfs/pkp-ic.zip"},
 }
 
 var cityData = make(map[string]*models.GTFSData)
@@ -68,6 +69,7 @@ func preloadCityData() {
 			Departures:    parser.GetDepartures(data),
 			Calendars:     parser.GetCalendar(data),
 			CalendarDates: parser.GetCalendarDates(data),
+			Shapes:        parser.GetShapes(data),
 		}
 
 		cityDataMutex.Lock()
@@ -184,6 +186,33 @@ func StartServer() {
 			c.JSON(http.StatusOK, gin.H{
 				"city":       cityID,
 				"departures": data.Departures,
+			})
+		}
+
+	})
+
+	r.GET("/api/:city/shapes", func(c *gin.Context) {
+		cityID := c.Param("city")
+		cityDataMutex.RLock()
+		data, exists := cityData[cityID]
+		cityDataMutex.RUnlock()
+
+		shape := c.Query("shape")
+
+		if !exists {
+			c.JSON(http.StatusNotFound, gin.H{"error": "City not supported"})
+			return
+		}
+
+		if shape != "" {
+			c.JSON(http.StatusOK, gin.H{
+				"city":   cityID,
+				"shapes": parser.GetShapeById(shape, data.Shapes),
+			})
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"city":   cityID,
+				"shapes": data.Shapes,
 			})
 		}
 

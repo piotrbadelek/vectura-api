@@ -60,6 +60,7 @@ type GTFSData struct {
 	Departures    []Departure
 	Calendars     []Calendar
 	CalendarDates []CalendarDate
+	Shapes        []Shape
 }
 
 type Route struct {
@@ -128,4 +129,11 @@ type CalendarDate struct {
 	ServiceId     string
 	Date          time.Time
 	ExceptionType ExceptionType
+}
+
+type Shape struct {
+	ShapeId         string
+	ShapePtLat      float64
+	ShapePtLon      float64
+	ShapePtSequence int
 }
